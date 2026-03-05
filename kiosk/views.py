@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404
 from .models import Region, Playlist, PlaylistItem, EKiosk, KioskLog
 from .serializers import (
     RegionSerializer, PlaylistSerializer, PlaylistItemSerializer,
-    EKioskSerializer, HeartbeatSerializer, ReorderSerializer
+    EKioskSerializer, HeartbeatSerializer, ReorderSerializer, KioskLogSerializer
 )
 from media_manager.models import Media
 
@@ -60,6 +60,14 @@ class PlaylistViewSet(viewsets.ModelViewSet):
         )
         return Response(PlaylistItemSerializer(item).data, status=status.HTTP_201_CREATED)
 
+    @action(detail=True, methods=['delete'], url_path='items/(?P<item_id>[^/.]+)')
+    def remove_item(self, request, pk=None, item_id=None):
+        playlist = self.get_object()
+        item = get_object_or_404(PlaylistItem, id=item_id, playlist=playlist)
+        item.delete()
+        playlist.save()  # recompute hash
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class EKioskViewSet(viewsets.ModelViewSet):
     queryset = EKiosk.objects.select_related('region', 'playlist_override').all()
@@ -89,6 +97,12 @@ class EKioskViewSet(viewsets.ModelViewSet):
             EKioskSerializer(kiosk).data,
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
         )
+
+    @action(detail=True, methods=['get'])
+    def logs(self, request, pk=None):
+        kiosk = self.get_object()
+        logs = kiosk.logs.all()[:50]  # latest 50
+        return Response(KioskLogSerializer(logs, many=True).data)
 
     @action(detail=True, methods=['get'])
     def check(self, request, pk=None):

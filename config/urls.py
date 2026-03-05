@@ -22,6 +22,7 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from kiosk.views import RegionViewSet, PlaylistViewSet, EKioskViewSet
+from kiosk.user_views import UserViewSet
 from media_manager.views import MediaViewSet
 from interactive.views import InteractivePageViewSet
 
@@ -29,6 +30,7 @@ router = DefaultRouter()
 router.register(r'regions', RegionViewSet, basename='region')
 router.register(r'playlists', PlaylistViewSet, basename='playlist')
 router.register(r'kiosks', EKioskViewSet, basename='ekiosk')
+router.register(r'users', UserViewSet, basename='user')
 router.register(r'media', MediaViewSet, basename='media')
 router.register(r'interactive/pages', InteractivePageViewSet, basename='interactive-page')
 

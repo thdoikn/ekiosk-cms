@@ -72,3 +72,9 @@ class ReorderSerializer(serializers.Serializer):
         child=serializers.DictField()
         # expects: [{"id": "uuid", "order": 1}, ...]
     )
+
+
+class KioskLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = KioskLog
+        fields = ['id', 'checked_at', 'reported_hash', 'ip_address', 'is_up_to_date']

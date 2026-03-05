@@ -71,7 +71,7 @@ class EKiosk(models.Model):
         STALE = 'stale', 'Stale Content'
         NEVER = 'never_connected', 'Never Connected'
 
-    id = models.UUIDField(primary_key=True, editable=False)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     region = models.ForeignKey(Region, on_delete=models.SET_NULL, null=True, blank=True, related_name='kiosks')
     playlist_override = models.ForeignKey(Playlist, on_delete=models.SET_NULL, null=True, blank=True,

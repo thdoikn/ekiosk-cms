@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
+from django.db.models import Max
 
 from .models import Region, Playlist, PlaylistItem, EKiosk, KioskLog
 from .serializers import (
@@ -17,7 +18,7 @@ class RegionViewSet(viewsets.ModelViewSet):
     queryset = Region.objects.all()
     serializer_class = RegionSerializer
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=['post'], url_path='assign-playlist')
     def assign_playlist(self, request, pk=None):
         region = self.get_object()
         playlist_id = request.data.get('playlist_id')
@@ -31,16 +32,23 @@ class PlaylistViewSet(viewsets.ModelViewSet):
     queryset = Playlist.objects.prefetch_related('items__media').all()
     serializer_class = PlaylistSerializer
 
-    @action(detail=True, methods=['post'], url_path='items/reorder')
+    @action(detail=True, methods=['post'], url_path='reorder-items')
     def reorder(self, request, pk=None):
         playlist = self.get_object()
         serializer = ReorderSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        # Step 1: shift all orders to a high range to avoid unique conflicts
+        # e.g. order 1,2,3 → 1001,1002,1003 temporarily
         for item_data in serializer.validated_data['items']:
             PlaylistItem.objects.filter(
-                id=item_data['id'],
-                playlist=playlist
+                id=item_data['id'], playlist=playlist
+            ).update(order=item_data['order'] + 1000)
+
+        # Step 2: now set the real target orders (no conflicts possible)
+        for item_data in serializer.validated_data['items']:
+            PlaylistItem.objects.filter(
+                id=item_data['id'], playlist=playlist
             ).update(order=item_data['order'])
 
         playlist.save()  # recompute hash
@@ -49,24 +57,41 @@ class PlaylistViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='items')
     def add_item(self, request, pk=None):
         playlist = self.get_object()
-        serializer = PlaylistItemSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        media = get_object_or_404(Media, id=request.data.get('media_id'))
+        media_id = request.data.get('media_id')
+        duration_seconds = request.data.get('duration_seconds', 10)
+
+        media = get_object_or_404(Media, id=media_id)
+
+        # auto-assign next order to avoid unique_together conflict
+        last_order = playlist.items.aggregate(
+            max_order=Max('order')
+        )['max_order'] or 0
+
         item = PlaylistItem.objects.create(
             playlist=playlist,
             media=media,
-            order=request.data.get('order', 1),
-            duration_seconds=request.data.get('duration_seconds', 10)
+            order=last_order + 1,
+            duration_seconds=duration_seconds,
         )
+        # playlist.save() is called by PlaylistItem.save() signal already
         return Response(PlaylistItemSerializer(item).data, status=status.HTTP_201_CREATED)
 
-    @action(detail=True, methods=['delete'], url_path='items/(?P<item_id>[^/.]+)')
-    def remove_item(self, request, pk=None, item_id=None):
+    @action(detail=True, methods=['patch', 'delete'], url_path='items/(?P<item_id>[^/.]+)')
+    def item_detail(self, request, pk=None, item_id=None):
         playlist = self.get_object()
         item = get_object_or_404(PlaylistItem, id=item_id, playlist=playlist)
-        item.delete()
-        playlist.save()  # recompute hash
-        return Response(status=status.HTTP_204_NO_CONTENT)
+
+        if request.method == 'DELETE':
+            item.delete()
+            playlist.save()  # recompute hash
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        # PATCH
+        duration = request.data.get('duration_seconds')
+        if duration is not None:
+            item.duration_seconds = int(duration)
+            item.save()  # triggers playlist hash recompute via PlaylistItem.save()
+        return Response(PlaylistItemSerializer(item).data)
 
 
 class EKioskViewSet(viewsets.ModelViewSet):

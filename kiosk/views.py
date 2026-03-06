@@ -22,10 +22,14 @@ class RegionViewSet(viewsets.ModelViewSet):
     def assign_playlist(self, request, pk=None):
         region = self.get_object()
         playlist_id = request.data.get('playlist_id')
+        if not playlist_id:
+            region.active_playlist = None
+            region.save()
+            return Response({'status': 'playlist unassigned'})
         playlist = get_object_or_404(Playlist, id=playlist_id)
-        playlist.region = region
-        playlist.save()
-        return Response({'status': 'playlist assigned'})
+        region.active_playlist = playlist
+        region.save()
+        return Response({'status': 'playlist assigned', 'playlist': playlist.name})
 
 
 class PlaylistViewSet(viewsets.ModelViewSet):

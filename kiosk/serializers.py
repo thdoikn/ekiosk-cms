@@ -4,9 +4,20 @@ from media_manager.serializers import MediaSerializer
 
 
 class RegionSerializer(serializers.ModelSerializer):
+    active_playlist = serializers.SerializerMethodField()
+    kiosk_count = serializers.SerializerMethodField()
+
     class Meta:
         model = Region
-        fields = ['id', 'name', 'description', 'created_at']
+        fields = ['id', 'name', 'description', 'active_playlist', 'kiosk_count', 'created_at']
+
+    def get_active_playlist(self, obj):
+        if obj.active_playlist:
+            return {'id': str(obj.active_playlist.id), 'name': obj.active_playlist.name}
+        return None
+
+    def get_kiosk_count(self, obj):
+        return obj.kiosks.count()
 
 
 class PlaylistItemSerializer(serializers.ModelSerializer):
@@ -20,13 +31,15 @@ class PlaylistItemSerializer(serializers.ModelSerializer):
 
 class PlaylistSerializer(serializers.ModelSerializer):
     items = PlaylistItemSerializer(many=True, read_only=True)
-    region = RegionSerializer(read_only=True)
-    region_id = serializers.UUIDField(write_only=True, required=False)
+    assigned_regions = serializers.SerializerMethodField()
 
     class Meta:
         model = Playlist
-        fields = ['id', 'name', 'region', 'region_id', 'is_active', 'hash', 'items', 'created_at']
+        fields = ['id', 'name', 'assigned_regions', 'is_active', 'hash', 'items', 'created_at']
         read_only_fields = ['hash']
+
+    def get_assigned_regions(self, obj):
+        return [{'id': str(r.id), 'name': r.name} for r in obj.assigned_regions.all()]
 
 
 class EKioskSerializer(serializers.ModelSerializer):

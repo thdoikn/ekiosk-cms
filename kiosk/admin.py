@@ -9,12 +9,12 @@ class PlaylistItemInline(admin.TabularInline):
 
 @admin.register(Region)
 class RegionAdmin(admin.ModelAdmin):
-    list_display = ['name', 'description', 'created_at']
+    list_display = ['name', 'active_playlist', 'description', 'created_at']
 
 
 @admin.register(Playlist)
 class PlaylistAdmin(admin.ModelAdmin):
-    list_display = ['name', 'region', 'is_active', 'hash', 'updated_at']
+    list_display = ['name', 'is_active', 'hash', 'updated_at']
     inlines = [PlaylistItemInline]
 
 

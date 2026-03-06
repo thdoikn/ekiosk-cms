@@ -8,6 +8,9 @@ from django.utils import timezone
 class Region(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
+    active_playlist = models.ForeignKey('Playlist', on_delete=models.SET_NULL,
+                                        null=True, blank=True,
+                                        related_name='assigned_regions')
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -19,8 +22,6 @@ class Region(models.Model):
 class Playlist(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
-    region = models.ForeignKey(Region, on_delete=models.SET_NULL, null=True, blank=True,
-                               related_name='playlists')
     is_active = models.BooleanField(default=True)
     hash = models.CharField(max_length=64, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -97,8 +98,8 @@ class EKiosk(models.Model):
     def get_active_playlist(self):
         if self.playlist_override and self.playlist_override.is_active:
             return self.playlist_override
-        if self.region:
-            return self.region.playlists.filter(is_active=True).first()
+        if self.region and self.region.active_playlist:
+            return self.region.active_playlist
         return None
 
     @property

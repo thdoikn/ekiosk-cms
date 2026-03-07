@@ -9,11 +9,7 @@ RUN uv pip install --system -r requirements.txt
 
 COPY . .
 
-# collectstatic needs settings to load, use dummy values at build time
-RUN SECRET_KEY=dummy-build-key \
-    DATABASE_URL=sqlite:///dummy.db \
-    USE_S3=False \
-    python manage.py collectstatic --noinput
+RUN USE_S3=False python manage.py collectstatic --noinput
 
 EXPOSE 8000
 

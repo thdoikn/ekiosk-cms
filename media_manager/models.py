@@ -31,3 +31,9 @@ class Media(models.Model):
             self.checksum = sha256.hexdigest()
             self.file_size = self.file.size
         super().save(*args, **kwargs)
+
+        # populate file_url using MEDIA_URL (public endpoint), not file.url (internal endpoint)
+        if self.file and not self.file_url:
+            from django.conf import settings
+            self.file_url = settings.MEDIA_URL + str(self.file)
+            Media.objects.filter(pk=self.pk).update(file_url=self.file_url)

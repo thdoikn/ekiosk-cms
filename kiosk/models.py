@@ -78,6 +78,7 @@ class EKiosk(models.Model):
     playlist_override = models.ForeignKey(Playlist, on_delete=models.SET_NULL, null=True, blank=True,
                                           related_name='kiosk_overrides')
     force_update = models.BooleanField(default=False)
+    stop_id    = models.CharField(max_length=10, blank=True, null=True)
 
     # Heartbeat diagnostics
     last_heartbeat = models.DateTimeField(null=True, blank=True)
@@ -88,6 +89,9 @@ class EKiosk(models.Model):
     last_storage_free = models.PositiveBigIntegerField(null=True, blank=True)
     last_memory_free = models.PositiveBigIntegerField(null=True, blank=True)
     last_known_hash = models.CharField(max_length=64, blank=True)
+
+    latitude   = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude  = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
 
     is_active = models.BooleanField(default=True)
     registered_at = models.DateTimeField(auto_now_add=True)

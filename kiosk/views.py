@@ -111,6 +111,9 @@ class EKioskViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def register(self, request):
         kiosk_id = request.data.get('kiosk_id')
+        if not kiosk_id:
+            return Response({'detail': 'kiosk_id is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
         name = request.data.get('name', 'Unknown Kiosk')
         region_id = request.data.get('region_id')
 

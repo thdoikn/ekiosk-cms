@@ -134,16 +134,6 @@ class EKioskViewSet(viewsets.ModelViewSet):
         return Response(KioskLogSerializer(logs, many=True).data)
 
     @action(detail=True, methods=['get'])
-    def check(self, request, pk=None):
-        kiosk = self.get_object()
-        playlist = kiosk.get_active_playlist()
-        return Response({
-            'playlist_hash': playlist.hash if playlist else None,
-            'force_update': kiosk.force_update,
-            'status': kiosk.status,
-        })
-
-    @action(detail=True, methods=['get'])
     def playlist(self, request, pk=None):
         kiosk = self.get_object()
         playlist = kiosk.get_active_playlist()
@@ -161,12 +151,14 @@ class EKioskViewSet(viewsets.ModelViewSet):
         ip = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR'))
 
         kiosk.last_heartbeat = timezone.now()
-        kiosk.last_known_hash = data['current_hash']
+        kiosk.last_known_hash = data.get('playlist_hash')
         kiosk.last_ip_address = ip
-        kiosk.last_app_version = data['app_version']
-        kiosk.last_os_version = data['os_version']
-        kiosk.last_storage_free = data['storage_free_bytes']
-        kiosk.last_memory_free = data['memory_free_bytes']
+        kiosk.last_app_version = data.get('app_version', '')
+        kiosk.last_os_version = data.get('os_version', '')
+        kiosk.last_storage_free = data.get('storage_free_bytes')
+        kiosk.last_memory_free = data.get('memory_free_bytes')
+        kiosk.latitude = data.get('latitude')
+        kiosk.longitude = data.get('longitude')
         kiosk.save()
 
         playlist = kiosk.get_active_playlist()

@@ -55,7 +55,8 @@ class EKioskSerializer(serializers.ModelSerializer):
             'playlist_override', 'force_update', 'status',
             'last_heartbeat', 'last_ip_address', 'last_app_version',
             'last_os_version', 'last_storage_free', 'last_memory_free',
-            'last_known_hash', 'is_active', 'registered_at', 'active_playlist'
+            'last_known_hash', 'is_active', 'registered_at', 'active_playlist',
+            'latitude', 'longitude', 'stop_id',
         ]
         read_only_fields = ['status', 'last_heartbeat', 'registered_at']
 
@@ -67,11 +68,13 @@ class EKioskSerializer(serializers.ModelSerializer):
 
 
 class HeartbeatSerializer(serializers.Serializer):
-    current_hash = serializers.CharField(max_length=64)
-    app_version = serializers.CharField(max_length=50, required=False, default='')
-    os_version = serializers.CharField(max_length=50, required=False, default='')
-    storage_free_bytes = serializers.IntegerField(required=False, default=0)
-    memory_free_bytes = serializers.IntegerField(required=False, default=0)
+    current_hash = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    app_version = serializers.CharField(required=False, allow_blank=True)
+    os_version = serializers.CharField(required=False, allow_blank=True)
+    storage_free_bytes = serializers.IntegerField(required=False, allow_null=True)
+    memory_free_bytes = serializers.IntegerField(required=False, allow_null=True)
+    latitude = serializers.DecimalField(max_digits=9, decimal_places=6, required=False, allow_null=True)
+    longitude = serializers.DecimalField(max_digits=9, decimal_places=6, required=False, allow_null=True)
 
 
 class KioskCheckSerializer(serializers.Serializer):

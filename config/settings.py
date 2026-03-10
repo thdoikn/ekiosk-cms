@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     # Third party
     'rest_framework',
     'rest_framework_simplejwt',
+    'drf_spectacular',
     'corsheaders',
 
     # Local apps
@@ -152,8 +153,39 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'PAGE_SIZE': 20,
 }
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'eKiosk CMS API',
+    'DESCRIPTION': (
+        'REST API for the eKiosk digital signage system — IKN Nusantara.\n\n'
+        '## Authentication\n'
+        'Kiosk endpoints require no authentication token. '
+        'Admin/dashboard endpoints use session or token auth.\n\n'
+        '## Flutter Integration\n'
+        'Kiosks communicate via the **Kiosk** tag endpoints only. '
+        'See the Flutter Developer Guide for full integration details.'
+    ),
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'persistAuthorization': True,
+        'displayOperationId': False,
+    },
+    'TAGS': [
+        {'name': 'Kiosk', 'description': 'Endpoints consumed by Flutter kiosk devices'},
+        {'name': 'Interactive', 'description': 'Interactive/touch page content'},
+        {'name': 'Media', 'description': 'Media file management'},
+        {'name': 'Playlist', 'description': 'Playlist management'},
+    ],
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SORT_OPERATIONS': False,
+}
+
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost:3000').split(',')
 
 # JWT
 from datetime import timedelta

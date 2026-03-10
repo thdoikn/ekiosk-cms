@@ -26,6 +26,8 @@ from kiosk.user_views import UserViewSet
 from media_manager.views import MediaViewSet
 from interactive.views import InteractivePageViewSet
 
+from drf_spectacular.views import (SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView)
+
 router = DefaultRouter()
 router.register(r'regions', RegionViewSet, basename='region')
 router.register(r'playlists', PlaylistViewSet, basename='playlist')
@@ -39,4 +41,9 @@ urlpatterns = [
     path('api/v1/', include(router.urls)),
     path('api/v1/auth/token/', TokenObtainPairView.as_view(), name='token_obtain'),
     path('api/v1/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    # OpenAPI schema + Swagger UI
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

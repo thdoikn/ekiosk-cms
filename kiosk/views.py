@@ -176,6 +176,7 @@ class EKioskViewSet(viewsets.ModelViewSet):
         return Response({
             'status': kiosk.status,
             'force_update': kiosk.force_update,
+            'stop_id': kiosk.stop_id,
             'playlist_hash': playlist.hash if playlist else None,
         })
 

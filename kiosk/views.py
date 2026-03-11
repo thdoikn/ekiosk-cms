@@ -161,6 +161,15 @@ class EKioskViewSet(viewsets.ModelViewSet):
         forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         ip = forwarded_for.split(',')[0].strip() if forwarded_for else request.META.get('REMOTE_ADDR')
 
+        lat = data.get("latitude")
+        lon = data.get("longitude")
+
+        if lat is not None:
+            lat = round(float(lat), 6)
+
+        if lon is not None:
+            lon = round(float(lon), 6)
+
         kiosk.last_heartbeat = timezone.now()
         kiosk.last_known_hash = data.get('playlist_hash') or ''
         kiosk.last_ip_address = ip
@@ -168,8 +177,8 @@ class EKioskViewSet(viewsets.ModelViewSet):
         kiosk.last_os_version = data.get('os_version', '')
         kiosk.last_storage_free = data.get('storage_free_bytes')
         kiosk.last_memory_free = data.get('memory_free_bytes')
-        kiosk.latitude = data.get('latitude')
-        kiosk.longitude = data.get('longitude')
+        kiosk.latitude = lat
+        kiosk.longitude = lon
         kiosk.save()
 
         playlist = kiosk.get_active_playlist()

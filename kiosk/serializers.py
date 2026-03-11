@@ -73,8 +73,14 @@ class HeartbeatSerializer(serializers.Serializer):
     os_version = serializers.CharField(required=False, allow_blank=True)
     storage_free_bytes = serializers.IntegerField(required=False, allow_null=True)
     memory_free_bytes = serializers.IntegerField(required=False, allow_null=True)
-    latitude = serializers.DecimalField(max_digits=9, decimal_places=6, required=False, allow_null=True)
-    longitude = serializers.DecimalField(max_digits=9, decimal_places=6, required=False, allow_null=True)
+    latitude = serializers.FloatField(required=False)
+    longitude = serializers.FloatField(required=False)
+
+    def validate_latitude(self, value):
+        return round(value, 6)
+
+    def validate_longitude(self, value):
+        return round(value, 6)
 
 
 class KioskCheckSerializer(serializers.Serializer):

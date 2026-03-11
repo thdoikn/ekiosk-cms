@@ -158,10 +158,11 @@ class EKioskViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        ip = request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR'))
+        forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        ip = forwarded_for.split(',')[0].strip() if forwarded_for else request.META.get('REMOTE_ADDR')
 
         kiosk.last_heartbeat = timezone.now()
-        kiosk.last_known_hash = data.get('playlist_hash')
+        kiosk.last_known_hash = data.get('playlist_hash') or ''
         kiosk.last_ip_address = ip
         kiosk.last_app_version = data.get('app_version', '')
         kiosk.last_os_version = data.get('os_version', '')

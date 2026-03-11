@@ -68,7 +68,7 @@ class EKioskSerializer(serializers.ModelSerializer):
 
 
 class HeartbeatSerializer(serializers.Serializer):
-    current_hash = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    playlist_hash = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     app_version = serializers.CharField(required=False, allow_blank=True)
     os_version = serializers.CharField(required=False, allow_blank=True)
     storage_free_bytes = serializers.IntegerField(required=False, allow_null=True)

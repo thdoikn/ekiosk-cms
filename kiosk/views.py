@@ -108,6 +108,12 @@ class EKioskViewSet(viewsets.ModelViewSet):
             return [AllowAny()]
         return [IsAuthenticated()]
 
+    def get_authenticators(self):
+        # Flutter endpoints send no cookies — skip SessionAuthentication to avoid CSRF enforcement
+        if self.action in ['register', 'heartbeat', 'check', 'playlist', 'confirm_update', 'interactive_pages']:
+            return []
+        return super().get_authenticators()
+
     @action(detail=False, methods=['post'])
     def register(self, request):
         kiosk_id = request.data.get('kiosk_id')

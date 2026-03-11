@@ -110,7 +110,8 @@ class EKioskViewSet(viewsets.ModelViewSet):
 
     def get_authenticators(self):
         # Flutter endpoints send no cookies — skip SessionAuthentication to avoid CSRF enforcement
-        if self.action in ['register', 'heartbeat', 'check', 'playlist', 'confirm_update', 'interactive_pages']:
+        # self.action is not yet set when get_authenticators() is called, so guard with hasattr
+        if hasattr(self, 'action') and self.action in ['register', 'heartbeat', 'check', 'playlist', 'confirm_update', 'interactive_pages']:
             return []
         return super().get_authenticators()
 

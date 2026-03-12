@@ -5,6 +5,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from django.db.models import Max
+from django.db import transaction
 
 from .models import Region, Playlist, PlaylistItem, EKiosk, KioskLog
 from .serializers import (
@@ -153,31 +154,85 @@ class EKioskViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def heartbeat(self, request, pk=None):
-        kiosk = self.get_object()
+        # Use get_object_or_404 to return 404 (not 500) when kiosk doesn't exist,
+        # while keeping the deeper select_related for the playlist hash lookup.
+        kiosk = get_object_or_404(
+            self.get_queryset().select_related(
+                'playlist_override',
+                'region__active_playlist',
+            ),
+            pk=pk,
+        )
+
         serializer = HeartbeatSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        ip = forwarded_for.split(',')[0].strip() if forwarded_for else request.META.get('REMOTE_ADDR')
+        ip = (
+            request.META.get('HTTP_X_REAL_IP')
+            or request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip()
+            or request.META.get('REMOTE_ADDR')
+        )
 
-        kiosk.last_heartbeat = timezone.now()
-        kiosk.last_known_hash = data.get('playlist_hash') or ''
-        kiosk.last_ip_address = ip
-        kiosk.last_app_version = data.get('app_version', '')
-        kiosk.last_os_version = data.get('os_version', '')
-        kiosk.last_storage_free = data.get('storage_free_bytes')
-        kiosk.last_memory_free = data.get('memory_free_bytes')
-        kiosk.latitude = data.get('latitude')
-        kiosk.longitude = data.get('longitude')
-        kiosk.save()
+        now = timezone.now()
+        playlist_hash = data.get('playlist_hash') or ''
+        app_version = data.get('app_version', '')
+        os_version = data.get('os_version', '')
+        storage_free = data.get('storage_free_bytes')
+        memory_free = data.get('memory_free_bytes')
+
+        was_offline = kiosk.status in (kiosk.Status.OFFLINE, kiosk.Status.NEVER)
 
         playlist = kiosk.get_active_playlist()
+        expected_hash = playlist.hash if playlist else None
+        is_up_to_date = not expected_hash or playlist_hash == expected_hash
+
+        kiosk.last_heartbeat = now
+        kiosk.last_known_hash = playlist_hash
+        kiosk.last_ip_address = ip
+        kiosk.last_app_version = app_version
+        kiosk.last_os_version = os_version
+        kiosk.last_storage_free = storage_free
+        kiosk.last_memory_free = memory_free
+
+        update_fields = [
+            'last_heartbeat', 'last_known_hash', 'last_ip_address',
+            'last_app_version', 'last_os_version',
+            'last_storage_free', 'last_memory_free',
+        ]
+
+        # Only update coordinates when the device actually sends them —
+        # avoids wiping previously stored GPS on heartbeats without location data.
+        latitude = data.get('latitude')
+        longitude = data.get('longitude')
+        if latitude is not None:
+            kiosk.latitude = latitude
+            update_fields.append('latitude')
+        if longitude is not None:
+            kiosk.longitude = longitude
+            update_fields.append('longitude')
+
+        if was_offline and kiosk.offline_notified_at:
+            kiosk.offline_notified_at = None
+            update_fields.append('offline_notified_at')
+
+        with transaction.atomic():
+            kiosk.save(update_fields=update_fields)
+
+            kiosk.logs.create(
+                reported_hash=playlist_hash,
+                ip_address=ip,
+                is_up_to_date=is_up_to_date,
+                app_version=app_version,
+                storage_free=storage_free,
+                memory_free=memory_free,
+            )
+
         return Response({
             'status': kiosk.status,
             'force_update': kiosk.force_update,
             'stop_id': kiosk.stop_id,
-            'playlist_hash': playlist.hash if playlist else None,
+            'playlist_hash': expected_hash,
         })
 
     @action(detail=True, methods=['post'], url_path='confirm-update')

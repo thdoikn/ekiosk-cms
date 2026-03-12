@@ -93,6 +93,9 @@ class EKiosk(models.Model):
     latitude   = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude  = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
 
+    # Offline alert tracking — set when notification is sent, cleared on recovery
+    offline_notified_at = models.DateTimeField(null=True, blank=True)
+
     is_active = models.BooleanField(default=True)
     registered_at = models.DateTimeField(auto_now_add=True)
 
@@ -126,6 +129,13 @@ class KioskLog(models.Model):
     reported_hash = models.CharField(max_length=64, blank=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     is_up_to_date = models.BooleanField()
+    app_version = models.CharField(max_length=50, blank=True)
+    storage_free = models.PositiveBigIntegerField(null=True, blank=True)
+    memory_free = models.PositiveBigIntegerField(null=True, blank=True)
 
     class Meta:
         ordering = ['-checked_at']
+        indexes = [
+            models.Index(fields=['checked_at']),
+            models.Index(fields=['kiosk', '-checked_at']),
+        ]

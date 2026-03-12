@@ -99,4 +99,7 @@ class ReorderSerializer(serializers.Serializer):
 class KioskLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = KioskLog
-        fields = ['id', 'checked_at', 'reported_hash', 'ip_address', 'is_up_to_date']
+        fields = [
+            'id', 'checked_at', 'reported_hash', 'ip_address',
+            'is_up_to_date', 'app_version', 'storage_free', 'memory_free',
+        ]

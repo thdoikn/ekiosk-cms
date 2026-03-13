@@ -180,6 +180,7 @@ class EKioskViewSet(viewsets.ModelViewSet):
         os_version = data.get('os_version', '')
         storage_free = data.get('storage_free_bytes')
         memory_free = data.get('memory_free_bytes')
+        app_state = data.get("app_state", "")
 
         was_offline = kiosk.status in (kiosk.Status.OFFLINE, kiosk.Status.NEVER)
 
@@ -216,6 +217,10 @@ class EKioskViewSet(viewsets.ModelViewSet):
             kiosk.offline_notified_at = None
             update_fields.append('offline_notified_at')
 
+        if app_state:
+            kiosk.last_app_state = app_state
+            update_fields.append("last_app_state")
+
         with transaction.atomic():
             kiosk.save(update_fields=update_fields)
 
@@ -226,12 +231,12 @@ class EKioskViewSet(viewsets.ModelViewSet):
                 app_version=app_version,
                 storage_free=storage_free,
                 memory_free=memory_free,
+                app_state=app_state,
             )
 
         return Response({
             'status': kiosk.status,
             'force_update': kiosk.force_update,
-            'stop_id': kiosk.stop_id,
             'playlist_hash': expected_hash,
         })
 

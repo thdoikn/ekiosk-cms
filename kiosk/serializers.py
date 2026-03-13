@@ -75,6 +75,10 @@ class HeartbeatSerializer(serializers.Serializer):
     memory_free_bytes = serializers.IntegerField(required=False, allow_null=True)
     latitude = serializers.FloatField(required=False)
     longitude = serializers.FloatField(required=False)
+    field_status = serializers.ChoiceField(
+        choices=["foreground", "background", "terminated"],
+        required=False,
+    )
 
     def validate_latitude(self, value):
         return round(value, 6)

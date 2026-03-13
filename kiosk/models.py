@@ -72,6 +72,11 @@ class EKiosk(models.Model):
         STALE = 'stale', 'Stale Content'
         NEVER = 'never_connected', 'Never Connected'
 
+    class AppState(models.TextChoices):
+        FOREGROUND = "foreground", "Foreground"
+        BACKGROUND = "background", "Background"
+        TERMINATED = "terminated", "Terminated"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     region = models.ForeignKey(Region, on_delete=models.SET_NULL, null=True, blank=True, related_name='kiosks')
@@ -98,6 +103,9 @@ class EKiosk(models.Model):
 
     is_active = models.BooleanField(default=True)
     registered_at = models.DateTimeField(auto_now_add=True)
+
+    last_app_state = models.CharField(max_length=20, choices=AppState.choices, blank=True,
+                                      default="")
 
     def __str__(self):
         return self.name
@@ -132,6 +140,8 @@ class KioskLog(models.Model):
     app_version = models.CharField(max_length=50, blank=True)
     storage_free = models.PositiveBigIntegerField(null=True, blank=True)
     memory_free = models.PositiveBigIntegerField(null=True, blank=True)
+
+    app_state = models.CharField(max_length=20, blank=True)
 
     class Meta:
         ordering = ['-checked_at']

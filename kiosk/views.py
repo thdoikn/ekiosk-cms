@@ -2,6 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.pagination import PageNumberPagination
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from django.db.models import Max
@@ -141,8 +142,11 @@ class EKioskViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'])
     def logs(self, request, pk=None):
         kiosk = self.get_object()
-        logs = kiosk.logs.all()[:50]  # latest 50
-        return Response(KioskLogSerializer(logs, many=True).data)
+        qs = kiosk.logs.all()
+        paginator = PageNumberPagination()
+        paginator.page_size = 20
+        page = paginator.paginate_queryset(qs, request)
+        return paginator.get_paginated_response(KioskLogSerializer(page, many=True).data)
 
     @action(detail=True, methods=['get'])
     def playlist(self, request, pk=None):

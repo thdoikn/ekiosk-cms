@@ -55,8 +55,8 @@ class EKioskSerializer(serializers.ModelSerializer):
             'playlist_override', 'force_update', 'status',
             'last_heartbeat', 'last_ip_address', 'last_app_version',
             'last_os_version', 'last_storage_free', 'last_memory_free',
-            'last_known_hash', 'is_active', 'registered_at', 'active_playlist',
-            'latitude', 'longitude', 'stop_id',
+            'last_known_hash', 'last_app_state', 'is_active', 'registered_at',
+            'active_playlist', 'latitude', 'longitude', 'stop_id',
         ]
         read_only_fields = ['status', 'last_heartbeat', 'registered_at']
 
@@ -75,7 +75,7 @@ class HeartbeatSerializer(serializers.Serializer):
     memory_free_bytes = serializers.IntegerField(required=False, allow_null=True)
     latitude = serializers.FloatField(required=False)
     longitude = serializers.FloatField(required=False)
-    field_status = serializers.ChoiceField(
+    app_state = serializers.ChoiceField(
         choices=["foreground", "background", "terminated"],
         required=False,
     )
@@ -105,5 +105,5 @@ class KioskLogSerializer(serializers.ModelSerializer):
         model = KioskLog
         fields = [
             'id', 'checked_at', 'reported_hash', 'ip_address',
-            'is_up_to_date', 'app_version', 'storage_free', 'memory_free',
+            'is_up_to_date', 'app_version', 'storage_free', 'memory_free', 'app_state',
         ]
